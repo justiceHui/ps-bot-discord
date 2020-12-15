@@ -51,6 +51,14 @@ def tokenize(cmd_string):
         ret['paramCount'] += 1
     return ret
 
+def isProblemNumber(x):
+    try:
+        y = int(x)
+    except ValueError:
+        return False
+    if y < 1000:
+        return False
+    return True
 
 def get_command_result(cmd_string):
     cmd = tokenize(cmd_string)
@@ -68,6 +76,8 @@ def get_command_result(cmd_string):
         return get_boj_user(cmd['param1'])
     if cmd['op'] == 'ptag' and cmd['paramCount'] == 1:
         return get_boj_problem_tier(cmd['param1'])
+    if cmd['op'] == 'prob' and cmd['paramCount'] == 1 and isProblemNumber(cmd['param1']):
+        return 'https://www.acmicpc.net/problem/' + cmd['param1'];
     return None
 
 
