@@ -1,7 +1,7 @@
-import discord
-import requests
 import json
 from urllib import parse  # url encode
+import discord
+import requests
 
 SERVER_URL = json.load(open('./secret.json'))['server_url']
 
@@ -33,13 +33,12 @@ def get_boj_search_problem(query):
     return requests.get(url).text
 
 
-def get_boj_problem_tier(prob):
+def get_boj_problem_tag(prob):
     url = SERVER_URL + '/boj/tag/' + prob
     return requests.get(url).text
 
 
-# end
-
+# Util
 def tokenize(cmd_string):
     arr = cmd_string.split()
     ret = {'prefix': arr[0][0], 'op': arr[0][1:], 'paramCount': 0, 'paramAll': ''}
@@ -51,14 +50,18 @@ def tokenize(cmd_string):
         ret['paramCount'] += 1
     return ret
 
-def isProblemNumber(x):
+
+def is_problem_number(num):
     try:
-        y = int(x)
+        num = int(num)
     except ValueError:
         return False
-    if y < 1000:
+    if num < 1000:
         return False
     return True
+
+# end
+
 
 def get_command_result(cmd_string):
     cmd = tokenize(cmd_string)
@@ -75,22 +78,22 @@ def get_command_result(cmd_string):
     if cmd['op'] == 'solved' and cmd['paramCount'] == 1:
         return get_boj_user(cmd['param1'])
     if cmd['op'] == 'ptag' and cmd['paramCount'] == 1:
-        return get_boj_problem_tier(cmd['param1'])
-    if cmd['op'] == 'prob' and cmd['paramCount'] == 1 and isProblemNumber(cmd['param1']):
-        return 'https://www.acmicpc.net/problem/' + cmd['param1'];
+        return get_boj_problem_tag(cmd['param1'])
+    if cmd['op'] == 'prob' and cmd['paramCount'] == 1 and is_problem_number(cmd['param1']):
+        return 'https://www.acmicpc.net/problem/' + cmd['param1']
     return None
 
 
-client = discord.Client()
+CLIENT = discord.Client()
 
 
-@client.event
+@CLIENT.event
 async def on_ready():
-    print(f'logged in as {client.user.name}')
-    await client.change_presence(status=discord.Status.online, activity=discord.Game('Problem Solving'))
+    print(f'logged in as {CLIENT.user.name}')
+    await CLIENT.change_presence(status=discord.Status.online, activity=discord.Game('PS'))
 
 
-@client.event
+@CLIENT.event
 async def on_message(message):
     msg = message.content
 
@@ -99,4 +102,4 @@ async def on_message(message):
         await message.channel.send(res)
 
 
-client.run(json.load(open('./secret.json'))['login_token'])
+CLIENT.run(json.load(open('./secret.json'))['login_token'])
