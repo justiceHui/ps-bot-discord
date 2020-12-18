@@ -37,11 +37,16 @@ def get_boj_problem_tier(prob):
     url = SERVER_URL + '/boj/tag/' + prob
     return requests.get(url).text
 
+def get_boj_problem_name(prob):
+    url = SERVER_URL + '/boj/problem_name/' + prob;
+    return requests.get(url).text
 
 # end
 
 def tokenize(cmd_string):
     arr = cmd_string.split()
+    if len(cmd_string) == 0:
+        return None
     ret = {'prefix': arr[0][0], 'op': arr[0][1:], 'paramCount': 0, 'paramAll': ''}
     for i in range(len(arr)):
         if i == 0:
@@ -60,27 +65,6 @@ def isProblemNumber(x):
         return False
     return True
 
-def get_command_result(cmd_string):
-    cmd = tokenize(cmd_string)
-    if cmd['prefix'] != '/':
-        return None
-    if cmd['op'] == 'cf' and cmd['paramCount'] == 0:
-        return get_codeforces_round()
-    if cmd['op'] == 'cf' and cmd['paramCount'] == 1:
-        return get_codeforces_user(cmd['param1'])
-    if cmd['op'] == 'rp' and cmd['paramCount'] > 0:
-        return get_boj_random_problem(cmd['paramAll'].replace('/', ''))
-    if cmd['op'] == 'sp' and cmd['paramCount'] > 0:
-        return get_boj_search_problem(cmd['paramAll'].replace('/', ''))
-    if cmd['op'] == 'solved' and cmd['paramCount'] == 1:
-        return get_boj_user(cmd['param1'])
-    if cmd['op'] == 'ptag' and cmd['paramCount'] == 1:
-        return get_boj_problem_tier(cmd['param1'])
-    if cmd['op'] == 'prob' and cmd['paramCount'] == 1 and isProblemNumber(cmd['param1']):
-        return 'https://www.acmicpc.net/problem/' + cmd['param1'];
-    return None
-
-
 client = discord.Client()
 
 
@@ -92,9 +76,31 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    msg = message.content
-
-    res = get_command_result(msg)
+    res = None
+    cmd_string = message.content
+    cmd = tokenize(cmd_string)
+    if cmd is None:
+        return
+    if cmd['prefix'] != '/':
+        res = None
+    elif cmd['op'] == 'cf' and cmd['paramCount'] == 0:
+        res = get_codeforces_round()
+    elif cmd['op'] == 'cf' and cmd['paramCount'] == 1:
+        res = get_codeforces_user(cmd['param1'])
+    elif cmd['op'] == 'rp' and cmd['paramCount'] > 0:
+        res = get_boj_random_problem(cmd['paramAll'].replace('/', ''))
+    elif cmd['op'] == 'sp' and cmd['paramCount'] > 0:
+        res = get_boj_search_problem(cmd['paramAll'].replace('/', ''))
+    elif cmd['op'] == 'solved' and cmd['paramCount'] == 1:
+        res = get_boj_user(cmd['param1'])
+    elif cmd['op'] == 'ptag' and cmd['paramCount'] == 1:
+        res = get_boj_problem_tier(cmd['param1'])
+    elif cmd['op'] == 'prob' and cmd['paramCount'] == 1 and isProblemNumber(cmd['param1']):
+        title = get_boj_problem_name(cmd['param1'])
+        embedVar = discord.Embed(title='🔍 `' + cmd_string + '`', description = '', color=0x42e0d1)
+        embedVar.add_field(name='<:boj:789617690233929779> ' + title, value='https://www.acmicpc.net/problem/' + cmd['param1'], inline=True)
+        res = None
+        await message.channel.send(embed=embedVar)
     if res is not None:
         await message.channel.send(res)
 
